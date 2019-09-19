@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/color/jquery.color-2.1.2.js"></script>
+    <script language="javascript">
+        $( document ).ready(function() {
+            drawTable();
+        });
+    </script>
+    <title>Sudoku Solver</title>
+</head>
+<body>
+    <div style="width: 100%; height: 100%; background-color: antiquewhite;">
+        <div style="text-align: center;">
+            <h1>Sudoku Solver</h1>
+            <div id="dvTable">
+            </div>
+            <br/>
+            <div>
+                <input type="button" class="btn" value="Clear Grid" onclick="clearTable();"/>
+                <input type="button" class="btn" value="Set Test" onclick="setTable(testers[tIndex]);"/>
+                <input type="button" class="btn" value="Arduino Solve" onclick="solveGrid();"/>
+                <p id="pprompt">
+                    Enter a Sudoku puzzle into the grid and<br />
+                    then click the "Arduino Solve" button.<br />
+                </p>
+            </div>
+        </div>
+    </div>
+    <script language="javascript">
+        var tIndex = 0;
+        function solveGrid(){
+            $(".btn").prop("disabled", true);
+            var pChars = "";
+            for(var r = 0; r < 9; r++){
+                for(var c = 0; c < 9; c++){
+                    var ic = $("#r"+r+"c"+c).prop("disabled", true);
+                    var cp = ic.val();
+                    if(cp >= "1" && cp <= "9") {
+                        pChars += cp;
+                    } else {
+                        pChars += "."
+                        ic.css({"background-color": "CornflowerBlue"}).addClass("blank");
+                    }
+                }
+            }
+            $("#pprompt").html("Solving, please wait...");
+            $.get("ajax/", pChars, readResult)
+        }
+        function readResult(m) {
+            alert(m);
+            var ret = jQuery.parseJSON(m);
+            if(ret.error){
+                $("#pprompt").html(ret.solved); // displays the error message
+            } else {
+                setTable(ret.solved);
+                var res = "Solved in ";
+                if(ret.msecs >= 1000){
+                    res += ret.msecs / 1000 + " seconds<br />";
+                } else {res += ret.msecs + " milliseconds<br />";}
+                if(ret.tot > 1){
+                    res += "using " + ret.tot + " attempts with a maximum search depth of " + ret.max;
+                } else {
+                    res += "at the first attempt."
+                }
+                $("#pprompt").html(res);
+            }
+            $(".blank").animate({"background-color": "white"}, 3000).removeClass("blank");
+            $(".cell").prop("disabled", false);
+            $(".btn").prop("disabled", false);
+        }
+        function setTable(values) {
+            var charPos = 0
+            for(var r = 0; r < 9; r++){
+                for(var c = 0; c < 9; c++){
+                    var cp = values.charAt(charPos++);
+                    if(cp < "1" || cp > "9"){cp = "";}
+                    $("#r"+r+"c"+c).val(cp);
+                }
+            }
+            tIndex < 3 ? tIndex++ : tIndex=0;
+        }
+        function clearTable() {
+            $(".cell").val("");
+        }
+        function drawTable() {
+            var dt = $("#dvTable");
+            var t1 = $("<table>").css({"background-color": "blue", "margin": "auto"});
+            for(var r = 0; r < 3; r++) {
+                var tr = $("<tr>");
+                for (var c = 0; c < 3; c++) {
+                    var td = $("<td>");
+                    var t2 = $("<table>").css("background-color", "CornflowerBlue");
+                    for(var ir = 0; ir < 3; ir++){
+                        var itr = $("<tr>")
+                        for(var ic = 0; ic < 3; ic++){
+                            var id = "r" + (r * 3 + ir) + "c" + (c * 3 + ic);
+                            itr.append($("<td>").append($("<input>")
+                            .attr({type: "text", maxlength: "1", size: "1", id: id}).css({height: "2em"})
+                            .addClass("cell").val("")))
+                        }
+                        t2.append(itr);
+                    }
+                    tr.append(td.append(t2));
+                }
+                t1.append(tr);
+            }
+            dt.html(t1).css({"display": "flex", "align-items": "center"});
+        }
+        var testers = [
+        ".2.4.6..76..2.753...5.8.1.2.5..4.8.9.6159...34.28.3..1216...49.......31.9.8...2..",
+        "....6.......4.367...5..7....9....4..1.....9.3.32....58.1.52..97.5...98......862..",
+        "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......",
+        "48.3............71.2.......7.5....6....2..8.............1.76...3.....4......5...."]
+    </script>
+</body>
+</html>
